@@ -12,9 +12,9 @@ Camtellect — это opensource-приложение на FastAPI, превра
 ## Установка
 
 ```bash
-git clone https://github.com/username/camtellect.git
-cd camtellect
-python -m venv venv
+git clone https://github.com/iron-66/Camtellect
+cd Camtellect
+python3 -m venv venv      # Windows: python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
