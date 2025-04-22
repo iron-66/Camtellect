@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Camtellect - opensource AIfyer</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background: none;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(135deg, #000000 0%, #003366 35%, #5e3b85 70%, #e0b87b 100%);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      margin-bottom: 2rem;
+    }
+
+    video {
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      margin-bottom: 1rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    button {
+      font-size: 1.2rem;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    #status {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Для использования необходим доступ к Вашему объектИИву и мИИкрофону</h2>
+    <video id="camera" autoplay playsinline muted></video>
+    <canvas id="snapshot" style="display:none"></canvas>
+    <br>
+    <button id="recordButton">Зажмите для записи</button>
+    <p id="status">Ожидание действия...</p>
+  </div>
+  <script>
+    const recordBtn = document.getElementById("recordButton");
+    const statusEl = document.getElementById("status");
+    const video = document.getElementById("camera");
+    const canvas = document.getElementById("snapshot");
+  
+    let mediaRecorder;
+    let audioChunks = [];
+    let stream;
+  
+    async function initMedia() {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      video.srcObject = stream;
+  
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+  
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) {
+          audioChunks.push(e.data);
+        }
+      };
+  
+      mediaRecorder.onstop = async () => {
+        statusEl.textContent = "Обработка...";
+  
+        // Аудио blob
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+  
+        // Фото с камеры
+        const ctx = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        const imageBlob = await new Promise(resolve =>
+          canvas.toBlob(resolve, "image/jpeg")
+        );
+  
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "speech.webm");
+        formData.append("image", imageBlob, "photo.jpg");
+  
+        try {
+          const response = await fetch("/process", {
+            method: "POST",
+            body: formData
+          });
+          const data = await response.json();
+          statusEl.textContent = "Ответ: " + data.reply;
+
+          const utterance = new SpeechSynthesisUtterance(data.reply);
+          utterance.lang = "ru-RU"; // "en-US"
+          speechSynthesis.speak(utterance);
+        } catch (err) {
+          console.error(err);
+          statusEl.textContent = "Ошибка при отправке.";
+        }
+      };
+    }
+  
+    // Инициализация камеры и микрофона
+    window.addEventListener("DOMContentLoaded", initMedia);
+  
+    // Управление кнопкой записи
+    recordBtn.addEventListener("mousedown", () => {
+      audioChunks = [];
+      mediaRecorder.start();
+      statusEl.textContent = "Запись...";
+    });
+  
+    recordBtn.addEventListener("mouseup", () => {
+      mediaRecorder.stop();
+    });
+  
+    // Поддержка мобильных
+    recordBtn.addEventListener("touchstart", e => {
+      e.preventDefault();
+      audioChunks = [];
+      mediaRecorder.start();
+      statusEl.textContent = "Запись...";
+    });
+  
+    recordBtn.addEventListener("touchend", e => {
+      e.preventDefault();
+      mediaRecorder.stop();
+    });
+  </script>  
+</body>
+</html>

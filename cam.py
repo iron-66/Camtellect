@@ -2,8 +2,11 @@ import cv2
 import pyttsx3
 import speech_recognition as sr
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-client = OpenAI(api_key="")
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_PLUS_KEY"))
 
 
 def record_audio():
