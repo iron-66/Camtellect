@@ -1,6 +1,6 @@
 # Camtellect – AIfy your camera & mic 🎥🎙️🧠
 
-Camtellect — это opensource-приложение на FastAPI, превращающее обычную камеру и микрофон в умного помощника с GPT-4o.
+Camtellect — это opensource-приложение на FastAPI, превращающее обычную камеру и микрофон в умного помощника с GPT-4.1.
 
 ## Возможности
 - 📷 Делает фото с камеры
@@ -17,4 +17,9 @@ cd camtellect
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+## Запуск
+```bash
 uvicorn server:app --reload
+```
