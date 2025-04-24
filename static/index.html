@@ -16,31 +16,20 @@
       position: fixed; inset: 0; z-index: -1;
       background: linear-gradient(135deg,#000 0%,#003366 35%,#5e3b85 70%,#e0b87b 100%);
     }
-    .container {
-      max-width: 720px; width: 100%; padding: 1rem; box-sizing: border-box;
-    }
+    .container { max-width: 720px; width: 100%; padding: 1rem; box-sizing: border-box; }
     h2 { font-size: clamp(1.5rem,4vw,3rem); margin-bottom:1.5rem; }
     video {
       width:100%; max-width:400px; border-radius:12px;
       box-shadow:0 0 10px rgba(255,255,255,0.2); margin-bottom:1rem;
     }
     button {
-      font-size:1.2rem;
-      padding:0.8rem 1.5rem;
-      border:none;
-      border-radius:8px;
-      background:rgba(255,255,255,0.1);
-      color:#fff;
-      cursor:pointer;
-      transition:background .3s;
-      margin: 0 .5rem .5rem 0;
-      -webkit-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-      touch-action: manipulation;
+      font-size:1.2rem; padding:0.8rem 1.5rem; border:none; border-radius:8px;
+      background:rgba(255,255,255,0.1); color:#fff; cursor:pointer; transition:background .3s;
+      margin: 0 .5rem .5rem 0; user-select: none; touch-action: manipulation;
     }
     button:disabled { opacity:.4; cursor:not-allowed; }
     button:hover:not(:disabled) { background:rgba(255,255,255,0.2); }
+    .icon { margin-right:0.5rem; font-size:1.3em; vertical-align:middle; }
     #status { margin-top:1rem; font-size:1.1rem; }
     canvas { display:none; }
   </style>
@@ -52,117 +41,90 @@
     <canvas id="snapshot"></canvas>
     <br>
     <button id="switchCam" disabled>⟳ Переключить камеру</button>
-    <button id="recordButton" disabled>🎤 Зажмите для записи</button>
+    <button id="recordButton" disabled><span class="icon">🎤</span>Записать</button>
     <p id="status">Инициализация…</p>
   </div>
 
   <script>
-    const switchBtn = document.getElementById("switchCam");
-    const recordBtn = document.getElementById("recordButton");
-    const statusEl  = document.getElementById("status");
-    const video     = document.getElementById("camera");
-    const canvas    = document.getElementById("snapshot");
+    const switchBtn = document.getElementById('switchCam');
+    const recordBtn = document.getElementById('recordButton');
+    const statusEl  = document.getElementById('status');
+    const video     = document.getElementById('camera');
+    const canvas    = document.getElementById('snapshot');
 
     let stream;
-    let currentFacing = 'user'; // 'user' — фронт, 'environment' — тыловая
+    let currentFacing = 'user';
+    let recorder = null;
+    let isRecording = false;
 
-    // Получить медиапоток с заданной камерой
     async function startStream() {
-      // Остановим старые треки
-      if (stream) {
-        stream.getTracks().forEach(t => t.stop());
-      }
-
+      if (stream) stream.getTracks().forEach(t => t.stop());
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: currentFacing } },
-          audio: true
+          video: { facingMode: { exact: currentFacing } }, audio: true
         });
-      } catch (err) {
-        // Если точный режим не поддерживается, попробуем без exact
+      } catch {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: currentFacing },
-          audio: true
+          video: { facingMode: currentFacing }, audio: true
         });
       }
-
       video.srcObject = stream;
       await new Promise(res => {
-        if (video.readyState >= 1) res();
-        else video.onloadedmetadata = () => res();
+        if (video.readyState >= 1) res(); else video.onloadedmetadata = () => res();
       });
-
-      // После успешного старта — разблокируем кнопки
-      statusEl.textContent = "Камера: " + (currentFacing === 'user' ? 'фронтальная' : 'тыловая');
+      statusEl.textContent = 'Камера: ' + (currentFacing === 'user' ? 'фронтальная' : 'тыловая');
       switchBtn.disabled = false;
       recordBtn.disabled = false;
     }
 
-    // Переключить камеру
     switchBtn.addEventListener('click', async () => {
-      // Меняем режим
       currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-      statusEl.textContent = "Переключаем…";
-      switchBtn.disabled = true;
-      recordBtn.disabled = true;
+      statusEl.textContent = 'Переключаем…'; switchBtn.disabled = true; recordBtn.disabled = true;
       await startStream();
     });
 
-    // Общая обработка остановки записи
-    async function onRecordingStop() {
-      statusEl.textContent = "Обработка…";
-
-      const audioBlob = new Blob(this._chunks, { type: this.mimeType });
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext("2d").drawImage(video, 0, 0);
-      const imageBlob = await new Promise(r => canvas.toBlob(r, "image/jpeg"));
-
-      const fd = new FormData();
-      fd.append("audio", audioBlob, "speech.webm");
-      fd.append("image", imageBlob, "photo.jpg");
-
-      try {
-        const resp = await fetch("/process", { method: "POST", body: fd });
-        const data = await resp.json();
-        statusEl.textContent = "Ответ: " + data.reply;
-
-        const u = new SpeechSynthesisUtterance(data.reply);
-        u.lang = "ru-RU";
-        speechSynthesis.speak(u);
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = "Ошибка при отправке данных";
-      }
+    function handleStop() {
+      statusEl.textContent = 'Обработка…';
+      const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      canvas.toBlob(async blob => {
+        const fd = new FormData();
+        fd.append('audio', audioBlob, 'speech.webm');
+        fd.append('image', blob, 'photo.jpg');
+        try {
+          const resp = await fetch('/process', { method: 'POST', body: fd });
+          const data = await resp.json();
+          statusEl.textContent = 'Ответ: ' + data.reply;
+          const u = new SpeechSynthesisUtterance(data.reply);
+          u.lang = 'ru-RU'; speechSynthesis.speak(u);
+        } catch (e) {
+          console.error(e); statusEl.textContent = 'Ошибка при отправке данных';
+        }
+      }, 'image/jpeg');
     }
 
-    // Запись аудио «на лету»
-    recordBtn.addEventListener("pointerdown", e => {
-      e.preventDefault();
-      statusEl.textContent = "Запись…";
-
-      const audioOnly = new MediaStream(stream.getAudioTracks());
-      const recorder = new MediaRecorder(audioOnly, { mimeType: "audio/webm;codecs=opus" });
-      recorder._chunks = [];
-      recorder.mimeType = recorder.mimeType;
-
-      recorder.ondataavailable = ev => {
-        if (ev.data.size) recorder._chunks.push(ev.data);
-      };
-      recorder.onstop = onRecordingStop.bind(recorder);
-
-      recorder.start();
-      recordBtn._currentRecorder = recorder;
+    recordBtn.addEventListener('click', () => {
+      if (!isRecording) {
+        // start
+        recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), { mimeType: 'audio/webm;codecs=opus' });
+        recorder._chunks = [];
+        recorder.mimeType = recorder.mimeType;
+        recorder.ondataavailable = e => { if (e.data.size) recorder._chunks.push(e.data); };
+        recorder.onstop = handleStop;
+        recorder.start();
+        recordBtn.textContent = '■ Стоп';
+        isRecording = true;
+        statusEl.textContent = 'Запись…';
+      } else {
+        // stop
+        recorder.stop();
+        recordBtn.innerHTML = '<span class="icon">🎤</span>Записать';
+        isRecording = false;
+      }
     });
 
-    recordBtn.addEventListener("pointerup", e => {
-      e.preventDefault();
-      const r = recordBtn._currentRecorder;
-      if (r && r.state === "recording") r.stop();
-    });
-
-    // Стартуем при загрузке
-    window.addEventListener("DOMContentLoaded", startStream);
+    window.addEventListener('DOMContentLoaded', startStream);
   </script>
 </body>
 </html>
