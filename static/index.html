@@ -25,11 +25,19 @@
       box-shadow:0 0 10px rgba(255,255,255,0.2); margin-bottom:1rem;
     }
     button {
-      font-size:1.2rem; padding:0.8rem 1.5rem;
-      border:none; border-radius:8px;
-      background:rgba(255,255,255,0.1); color:#fff;
-      cursor:pointer; transition:background .3s;
+      font-size:1.2rem;
+      padding:0.8rem 1.5rem;
+      border:none;
+      border-radius:8px;
+      background:rgba(255,255,255,0.1);
+      color:#fff;
+      cursor:pointer;
+      transition:background .3s;
       margin: 0 .5rem .5rem 0;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
     }
     button:disabled { opacity:.4; cursor:not-allowed; }
     button:hover:not(:disabled) { background:rgba(255,255,255,0.2); }
@@ -44,7 +52,7 @@
     <canvas id="snapshot"></canvas>
     <br>
     <button id="switchCam" disabled>⟳ Переключить камеру</button>
-    <button id="recordButton" disabled>Зажмите для записи</button>
+    <button id="recordButton" disabled>🎤 Зажмите для записи</button>
     <p id="status">Инициализация…</p>
   </div>
 
