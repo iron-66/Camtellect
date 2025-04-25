@@ -93,7 +93,9 @@
     let isRecording = false;
 
     async function startStream() {
-      if (stream) stream.getTracks().forEach(t => t.stop());
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -112,6 +114,7 @@
         if (video.readyState >= 1) res();
         else video.onloadedmetadata = () => res();
       });
+
       switchBtn.disabled = false;
       statusEl.textContent = 'Камера: ' + (currentFacing === 'user' ? 'фронтальная' : 'тыловая');
     }
@@ -135,37 +138,67 @@
       }
 
       if (!isRecording) {
-        recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), {
-          mimeType: 'audio/webm;codecs=opus'
-        });
+        // Подбираем поддерживаемый формат
+        const options = {};
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          options.mimeType = 'audio/mp4';             // для iOS Safari
+        } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          options.mimeType = 'audio/webm;codecs=opus';// для остальных
+        }
+
+        // Используем только аудио-треки
+        const audioStream = new MediaStream(stream.getAudioTracks());
+
+        try {
+          recorder = new MediaRecorder(audioStream, options);
+        } catch (e) {
+          console.error('Не удалось создать MediaRecorder:', e);
+          statusEl.textContent = 'Ошибка записи: формат не поддерживается';
+          return;
+        }
+
         recorder._chunks = [];
-        recorder.ondataavailable = e => { if (e.data.size) recorder._chunks.push(e.data); };
-        recorder.start();
-        isRecording = true;
-        recordBtn.textContent = '■ Стоп';
-        statusEl.textContent = 'Запись...';
-      } else {
+        recorder.ondataavailable = e => {
+          if (e.data.size) recorder._chunks.push(e.data);
+        };
+        recorder.onerror = e => {
+          console.error('Recorder error:', e);
+          statusEl.textContent = 'Ошибка при записи';
+        };
+        recorder.onstart = () => {
+          console.log('Recording started');
+        };
         recorder.onstop = async () => {
           statusEl.textContent = 'Обработка...';
-          const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
+          const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType || 'audio/webm' });
+          // Снимок с видео
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           canvas.getContext('2d').drawImage(video, 0, 0);
           const imageBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
+
+          // Отправка на сервер
           const fd = new FormData();
-          fd.append('audio', audioBlob, 'speech.webm');
+          fd.append('audio', audioBlob, 'speech.' + (audioBlob.type.includes('mp4') ? 'mp4' : 'webm'));
           fd.append('image', imageBlob, 'photo.jpg');
           try {
             const resp = await fetch('/process', { method: 'POST', body: fd });
             const data = await resp.json();
             statusEl.textContent = 'Ответ: ' + data.reply;
             const u = new SpeechSynthesisUtterance(data.reply);
-            u.lang = 'ru-RU'; speechSynthesis.speak(u);
+            u.lang = 'ru-RU';
+            speechSynthesis.speak(u);
           } catch (e) {
             console.error(e);
             statusEl.textContent = 'Ошибка при отправке';
           }
         };
+
+        recorder.start();        // можно указать интервал: recorder.start(1000)
+        isRecording = true;
+        recordBtn.textContent = '■ Стоп';
+        statusEl.textContent = 'Запись...';
+      } else {
         recorder.stop();
         isRecording = false;
         recordBtn.textContent = '🎤 Записать';
