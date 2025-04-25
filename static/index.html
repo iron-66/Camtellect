@@ -73,7 +73,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Для работы нужен доступ к камере и микрофону</h2>
+    <h2>Для работы необходим доступ к камере и микрофону</h2>
     <video id="camera" autoplay playsinline muted></video>
     <canvas id="snapshot"></canvas>
     <div class="buttons">
@@ -89,13 +89,25 @@
     const statusEl    = document.getElementById('status');
     const video       = document.getElementById('camera');
     const canvas      = document.getElementById('snapshot');
-
+  
     let stream;
     let currentFacing = 'user';
     let recorder      = null;
     let isRecording   = false;
-
-    // Стартует камеру сразу после загрузки
+    let audioCtx;
+  
+    // AudioContext Safari/iOS
+    function unlockAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const src    = audioCtx.createBufferSource();
+        src.buffer   = buffer;
+        src.connect(audioCtx.destination);
+        src.start(0);
+      }
+    }
+  
     async function startStream() {
       if (stream) stream.getTracks().forEach(t => t.stop());
       try {
@@ -114,13 +126,12 @@
         if (video.readyState >= 1) res();
         else video.onloadedmetadata = () => res();
       });
-
+  
       statusEl.textContent   = 'Камера: ' + (currentFacing === 'user' ? 'фронтальная' : 'тыловая');
       switchBtn.disabled     = false;
       recordBtn.disabled     = false;
     }
-
-    // Переключение камеры
+  
     switchBtn.addEventListener('click', async () => {
       currentFacing = currentFacing === 'user' ? 'environment' : 'user';
       statusEl.textContent = 'Переключаем…';
@@ -128,22 +139,21 @@
       recordBtn.disabled   = true;
       await startStream();
     });
-
-    // Обработка и отправка после остановки
+  
     async function stopAndProcess() {
       statusEl.textContent = 'Обработка…';
       const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
-      // Снимок с видео
+  
       canvas.width  = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
       const imageBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
-      // Формируем форму и отправляем
-      const fd = new FormData();
-      // расширение выбираем по mimeType
+  
+      const fd  = new FormData();
       const ext = recorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
       fd.append('audio', audioBlob, `speech.${ext}`);
       fd.append('image', imageBlob, 'photo.jpg');
+  
       try {
         const resp = await fetch('/process', { method: 'POST', body: fd });
         const data = await resp.json();
@@ -156,19 +166,18 @@
         statusEl.textContent = 'Ошибка при отправке данных';
       }
     }
-
-    // Начало/стоп записи с выбором кодека
+  
     function handleRecording() {
+      unlockAudio();
+  
       if (!isRecording) {
-        // Подбираем поддерживаемый mimeType
         const options = {};
         if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          options.mimeType = 'audio/mp4';            // предпочтительно для iOS Safari
+          options.mimeType = 'audio/mp4'; // iOS Safari
         } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
           options.mimeType = 'audio/webm;codecs=opus';
         }
-
-        // Создаём рекордер на аудио-треках
+  
         try {
           recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), options);
         } catch (err) {
@@ -176,7 +185,7 @@
           statusEl.textContent = 'Ошибка записи: формат не поддерживается';
           return;
         }
-        recorder.mimeType = recorder.mimeType;  // сохраняем реально выбранный формат
+        recorder.mimeType = recorder.mimeType;
         recorder._chunks  = [];
         recorder.ondataavailable = e => {
           if (e.data.size) recorder._chunks.push(e.data);
@@ -186,22 +195,25 @@
           console.error('Recorder error:', e);
           statusEl.textContent = 'Ошибка при записи';
         };
-
-        recorder.start();    // можно: recorder.start(1000) для регулярных фрагментов
-        isRecording      = true;
+  
+        recorder.start();
+        isRecording = true;
         recordBtn.textContent = '■ Стоп';
-        statusEl.textContent  = 'Запись…';
+        statusEl.textContent = 'Запись…';
       } else {
         recorder.stop();
         isRecording = false;
         recordBtn.textContent = '🎤 Записать';
       }
     }
-
+  
     recordBtn.addEventListener('click', handleRecording);
-    recordBtn.addEventListener('touchstart', e => { e.preventDefault(); handleRecording(); }, { passive: false });
-
+    recordBtn.addEventListener('touchstart', e => {
+      e.preventDefault();
+      handleRecording();
+    }, { passive: false });
+  
     window.addEventListener('DOMContentLoaded', startStream);
-  </script>
+  </script>  
 </body>
 </html>
