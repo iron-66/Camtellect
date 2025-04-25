@@ -51,11 +51,8 @@
       color: #fff;
       cursor: pointer;
       transition: background .3s;
-      user-select: none;
+      user-select: none; -webkit-user-select: none; -ms-user-select: none;
       touch-action: manipulation;
-      -webkit-touch-callout: none;
-      line-height: 1;
-      vertical-align: middle;
     }
     button:disabled {
       opacity: .4;
@@ -78,9 +75,9 @@
     <canvas id="snapshot"></canvas>
     <div class="buttons">
       <button id="switchCam" disabled>⟳ Переключить</button>
-      <button id="recordButton" disabled>🎤 Записать</button>
+      <button id="recordButton">🎤 Записать</button>
     </div>
-    <p id="status">Инициализация…</p>
+    <p id="status">Нажмите «Записать» для запроса доступа</p>
   </div>
 
   <script>
@@ -90,84 +87,90 @@
     const video     = document.getElementById('camera');
     const canvas    = document.getElementById('snapshot');
 
-    let stream;
+    let stream = null;
     let currentFacing = 'user';
     let recorder = null;
     let isRecording = false;
 
     async function startStream() {
       if (stream) stream.getTracks().forEach(t => t.stop());
+
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: currentFacing } }, audio: true
+          video: { facingMode: { exact: currentFacing } },
+          audio: true
         });
       } catch {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: currentFacing }, audio: true
+          video: { facingMode: currentFacing },
+          audio: true
         });
       }
+
       video.srcObject = stream;
       await new Promise(res => {
-        if (video.readyState >= 1) res(); else video.onloadedmetadata = () => res();
+        if (video.readyState >= 1) res();
+        else video.onloadedmetadata = () => res();
       });
-      statusEl.textContent = 'Камера: ' + (currentFacing === 'user' ? 'фронтальная' : 'тыловая');
       switchBtn.disabled = false;
-      recordBtn.disabled = false;
+      statusEl.textContent = 'Камера: ' + (currentFacing === 'user' ? 'фронтальная' : 'тыловая');
     }
 
     switchBtn.addEventListener('click', async () => {
       currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-      statusEl.textContent = 'Переключаем…';
       switchBtn.disabled = true;
-      recordBtn.disabled = true;
       await startStream();
     });
 
-    async function stopAndProcess() {
-      statusEl.textContent = 'Обработка…';
-      const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      const imageBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
-      const fd = new FormData();
-      fd.append('audio', audioBlob, 'speech.webm');
-      fd.append('image', imageBlob, 'photo.jpg');
-      try {
-        const resp = await fetch('/process', { method: 'POST', body: fd });
-        const data = await resp.json();
-        statusEl.textContent = 'Ответ: ' + data.reply;
-        const u = new SpeechSynthesisUtterance(data.reply);
-        u.lang = 'ru-RU';
-        speechSynthesis.speak(u);
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = 'Ошибка при отправке данных';
+    recordBtn.addEventListener('click', async () => {
+      if (!stream) {
+        statusEl.textContent = 'Запрашиваем доступ...';
+        try {
+          await startStream();
+        } catch (err) {
+          console.error(err);
+          statusEl.textContent = 'Доступ отклонён';
+          return;
+        }
       }
-    }
 
-    function handleRecording() {
       if (!isRecording) {
-        recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), { mimeType: 'audio/webm;codecs=opus' });
+        recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), {
+          mimeType: 'audio/webm;codecs=opus'
+        });
         recorder._chunks = [];
-        recorder.mimeType = recorder.mimeType;
         recorder.ondataavailable = e => { if (e.data.size) recorder._chunks.push(e.data); };
-        recorder.onstop = stopAndProcess;
         recorder.start();
         isRecording = true;
         recordBtn.textContent = '■ Стоп';
-        statusEl.textContent = 'Запись…';
+        statusEl.textContent = 'Запись...';
       } else {
+        recorder.onstop = async () => {
+          statusEl.textContent = 'Обработка...';
+          const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          canvas.getContext('2d').drawImage(video, 0, 0);
+          const imageBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
+          const fd = new FormData();
+          fd.append('audio', audioBlob, 'speech.webm');
+          fd.append('image', imageBlob, 'photo.jpg');
+          try {
+            const resp = await fetch('/process', { method: 'POST', body: fd });
+            const data = await resp.json();
+            statusEl.textContent = 'Ответ: ' + data.reply;
+            const u = new SpeechSynthesisUtterance(data.reply);
+            u.lang = 'ru-RU'; speechSynthesis.speak(u);
+          } catch (e) {
+            console.error(e);
+            statusEl.textContent = 'Ошибка при отправке';
+          }
+        };
         recorder.stop();
         isRecording = false;
         recordBtn.textContent = '🎤 Записать';
       }
-    }
-
-    recordBtn.addEventListener('click', handleRecording);
-    recordBtn.addEventListener('touchstart', e => { e.preventDefault(); handleRecording(); }, { passive: false });
-
-    window.addEventListener('DOMContentLoaded', startStream);
+    });
   </script>
 </body>
 </html>
