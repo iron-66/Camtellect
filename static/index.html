@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Camtellect – AIfyer</title>
   <style>
     html, body {
@@ -14,24 +14,61 @@
     body::before {
       content: "";
       position: fixed; inset: 0; z-index: -1;
-      background: linear-gradient(135deg,#000 0%,#003366 35%,#5e3b85 70%,#e0b87b 100%);
+      background: linear-gradient(135deg, #000 0%, #003366 35%, #5e3b85 70%, #e0b87b 100%);
     }
-    .container { max-width: 720px; width: 100%; padding: 1rem; box-sizing: border-box; }
-    h2 { font-size: clamp(1.5rem,4vw,3rem); margin-bottom:1.5rem; }
+    .container {
+      max-width: 720px; width: 100%; padding: 1rem; box-sizing: border-box;
+    }
+    h2 {
+      font-size: clamp(1.5rem, 4vw, 3rem);
+      margin-bottom: 1.5rem;
+    }
     video {
-      width:100%; max-width:400px; border-radius:12px;
-      box-shadow:0 0 10px rgba(255,255,255,0.2); margin-bottom:1rem;
+      width: 100%; max-width: 400px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.2);
+      margin-bottom: 1rem;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
     }
     button {
-      font-size:1.2rem; padding:0.8rem 1.5rem; border:none; border-radius:8px;
-      background:rgba(255,255,255,0.1); color:#fff; cursor:pointer; transition:background .3s;
-      margin: 0 .5rem .5rem 0; user-select: none; touch-action: manipulation;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 60px;
+      box-sizing: border-box;
+      font-size: 1.2rem;
+      padding: 0 1.5rem;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      cursor: pointer;
+      transition: background .3s;
+      user-select: none;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;
+      line-height: 1;
+      vertical-align: middle;
     }
-    button:disabled { opacity:.4; cursor:not-allowed; }
-    button:hover:not(:disabled) { background:rgba(255,255,255,0.2); }
-    .icon { margin-right:0.5rem; font-size:1.3em; vertical-align:middle; }
-    #status { margin-top:1rem; font-size:1.1rem; }
-    canvas { display:none; }
+    button:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background: rgba(255,255,255,0.2);
+    }
+    #status {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+    }
+    canvas { display: none; }
   </style>
 </head>
 <body>
@@ -39,9 +76,10 @@
     <h2>Для работы нужен доступ к камере и микрофону</h2>
     <video id="camera" autoplay playsinline muted></video>
     <canvas id="snapshot"></canvas>
-    <br>
-    <button id="switchCam" disabled>⟳ Переключить камеру</button>
-    <button id="recordButton" disabled><span class="icon">🎤</span>Записать</button>
+    <div class="buttons">
+      <button id="switchCam" disabled>⟳ Переключить</button>
+      <button id="recordButton" disabled>🎤 Записать</button>
+    </div>
     <p id="status">Инициализация…</p>
   </div>
 
@@ -79,50 +117,55 @@
 
     switchBtn.addEventListener('click', async () => {
       currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-      statusEl.textContent = 'Переключаем…'; switchBtn.disabled = true; recordBtn.disabled = true;
+      statusEl.textContent = 'Переключаем…';
+      switchBtn.disabled = true;
+      recordBtn.disabled = true;
       await startStream();
     });
 
-    function handleStop() {
+    async function stopAndProcess() {
       statusEl.textContent = 'Обработка…';
       const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
-      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
-      canvas.toBlob(async blob => {
-        const fd = new FormData();
-        fd.append('audio', audioBlob, 'speech.webm');
-        fd.append('image', blob, 'photo.jpg');
-        try {
-          const resp = await fetch('/process', { method: 'POST', body: fd });
-          const data = await resp.json();
-          statusEl.textContent = 'Ответ: ' + data.reply;
-          const u = new SpeechSynthesisUtterance(data.reply);
-          u.lang = 'ru-RU'; speechSynthesis.speak(u);
-        } catch (e) {
-          console.error(e); statusEl.textContent = 'Ошибка при отправке данных';
-        }
-      }, 'image/jpeg');
+      const imageBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
+      const fd = new FormData();
+      fd.append('audio', audioBlob, 'speech.webm');
+      fd.append('image', imageBlob, 'photo.jpg');
+      try {
+        const resp = await fetch('/process', { method: 'POST', body: fd });
+        const data = await resp.json();
+        statusEl.textContent = 'Ответ: ' + data.reply;
+        const u = new SpeechSynthesisUtterance(data.reply);
+        u.lang = 'ru-RU';
+        speechSynthesis.speak(u);
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = 'Ошибка при отправке данных';
+      }
     }
 
-    recordBtn.addEventListener('click', () => {
+    function handleRecording() {
       if (!isRecording) {
-        // start
         recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), { mimeType: 'audio/webm;codecs=opus' });
         recorder._chunks = [];
         recorder.mimeType = recorder.mimeType;
         recorder.ondataavailable = e => { if (e.data.size) recorder._chunks.push(e.data); };
-        recorder.onstop = handleStop;
+        recorder.onstop = stopAndProcess;
         recorder.start();
-        recordBtn.textContent = '■ Стоп';
         isRecording = true;
+        recordBtn.textContent = '■ Стоп';
         statusEl.textContent = 'Запись…';
       } else {
-        // stop
         recorder.stop();
-        recordBtn.innerHTML = '<span class="icon">🎤</span>Записать';
         isRecording = false;
+        recordBtn.textContent = '🎤 Записать';
       }
-    });
+    }
+
+    recordBtn.addEventListener('click', handleRecording);
+    recordBtn.addEventListener('touchstart', e => { e.preventDefault(); handleRecording(); }, { passive: false });
 
     window.addEventListener('DOMContentLoaded', startStream);
   </script>
