@@ -84,7 +84,6 @@
     </div>
 
     <p id="status">Инициализация…</p>
-    <audio id="player" style="display:none"></audio>
   </div>
 
   <script>
@@ -94,13 +93,13 @@
     const statusEl = document.getElementById('status');
     const video = document.getElementById('camera');
     const canvas = document.getElementById('snapshot');
-    const player = document.getElementById('player');
 
     let stream;
     let currentFacing = 'user';
     let recorder = null;
     let isRecording = false;
     let audioCtx;
+    let replyText = '';
 
     async function startStream() {
       if (stream) stream.getTracks().forEach(t => t.stop());
@@ -151,18 +150,17 @@
         const data = await resp.json();
         statusEl.textContent = 'Ответ: ' + data.reply;
 
-        const replyText = data.reply;
+        // Сохранение ответа в глобальную переменную
+        replyText = data.reply;
+
+        // Кнопка воспроизведения
         playBtn.style.display = 'inline-flex';
-        playBtn.onclick = () => {
+
+        // Автовоспроизведение на не-iOS
+        const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) && !window.MSStream;
+        if (!isIOS) {
           const utter = new SpeechSynthesisUtterance(replyText);
           utter.lang = 'ru-RU';
-          speechSynthesis.speak(utter);
-        };
-
-        const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) && !window.MSStream;
-        const utter = new SpeechSynthesisUtterance(replyText);
-        utter.lang = 'ru-RU';
-        if (!isIOS) {
           speechSynthesis.speak(utter);
         }
 
@@ -172,9 +170,19 @@
       }
     }
 
+    function playReply() {
+      const utter = new SpeechSynthesisUtterance(replyText);
+      utter.lang = 'ru-RU';
+      speechSynthesis.speak(utter);
+    }
+
+    // Обработчики записи
     recordBtn.addEventListener('click', () => { unlockAudio(); handleRecording(); });
     recordBtn.addEventListener('touchstart', e => { e.preventDefault(); unlockAudio(); handleRecording(); }, { passive: false });
-    playBtn.addEventListener('touchstart', e => { e.preventDefault(); /* ловим iOS тап */ }, { passive: false });
+
+    // Обработчики кнопки воспроизведения
+    playBtn.addEventListener('click', playReply);
+    playBtn.addEventListener('touchend', e => { e.preventDefault(); playReply(); }, { passive: false });
 
     function handleRecording() {
       if (!isRecording) {
