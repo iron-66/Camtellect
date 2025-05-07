@@ -76,62 +76,46 @@
     <h2>Для работы необходим доступ к камере и микрофону</h2>
     <video id="camera" autoplay playsinline muted></video>
     <canvas id="snapshot"></canvas>
+
     <div class="buttons">
       <button id="switchCam" disabled>⟳ Переключить</button>
       <button id="recordButton" disabled>🎤 Записать</button>
+      <button id="playButton" style="display:none">▶ Воспроизвести</button>
     </div>
+
     <p id="status">Инициализация…</p>
+    <audio id="player" style="display:none"></audio>
   </div>
 
   <script>
-    const switchBtn   = document.getElementById('switchCam');
-    const recordBtn   = document.getElementById('recordButton');
-    const statusEl    = document.getElementById('status');
-    const video       = document.getElementById('camera');
-    const canvas      = document.getElementById('snapshot');
-  
+    const switchBtn = document.getElementById('switchCam');
+    const recordBtn = document.getElementById('recordButton');
+    const playBtn = document.getElementById('playButton');
+    const statusEl = document.getElementById('status');
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('snapshot');
+    const player = document.getElementById('player');
+
     let stream;
     let currentFacing = 'user';
-    let recorder      = null;
-    let isRecording   = false;
+    let recorder = null;
+    let isRecording = false;
     let audioCtx;
-  
-    // AudioContext Safari/iOS
-    function unlockAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const buffer = audioCtx.createBuffer(1, 1, 22050);
-        const src    = audioCtx.createBufferSource();
-        src.buffer   = buffer;
-        src.connect(audioCtx.destination);
-        src.start(0);
-      }
-    }
-  
+
     async function startStream() {
       if (stream) stream.getTracks().forEach(t => t.stop());
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: currentFacing } },
-          audio: true
-        });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: currentFacing } }, audio: true });
       } catch {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: currentFacing },
-          audio: true
-        });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing }, audio: true });
       }
       video.srcObject = stream;
-      await new Promise(res => {
-        if (video.readyState >= 1) res();
-        else video.onloadedmetadata = () => res();
-      });
-  
+      await new Promise(res => video.readyState >= 1 ? res() : video.onloadedmetadata = res);
       statusEl.textContent   = 'Камера: ' + (currentFacing === 'user' ? 'фронтальная' : 'тыловая');
       switchBtn.disabled     = false;
       recordBtn.disabled     = false;
     }
-  
+
     switchBtn.addEventListener('click', async () => {
       currentFacing = currentFacing === 'user' ? 'environment' : 'user';
       statusEl.textContent = 'Переключаем…';
@@ -139,45 +123,67 @@
       recordBtn.disabled   = true;
       await startStream();
     });
-  
+
+    function unlockAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const buf = audioCtx.createBuffer(1,1,22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      src.connect(audioCtx.destination);
+      src.start();
+    }
+
     async function stopAndProcess() {
       statusEl.textContent = 'Обработка…';
       const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
-  
       canvas.width  = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video, 0, 0);
       const imageBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
-  
-      const fd  = new FormData();
+      const fd = new FormData();
       const ext = recorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
       fd.append('audio', audioBlob, `speech.${ext}`);
       fd.append('image', imageBlob, 'photo.jpg');
-  
+
       try {
         const resp = await fetch('/process', { method: 'POST', body: fd });
         const data = await resp.json();
         statusEl.textContent = 'Ответ: ' + data.reply;
-        const u = new SpeechSynthesisUtterance(data.reply);
-        u.lang = 'ru-RU';
-        speechSynthesis.speak(u);
+
+        const replyText = data.reply;
+        playBtn.style.display = 'inline-flex';
+        playBtn.onclick = () => {
+          const utter = new SpeechSynthesisUtterance(replyText);
+          utter.lang = 'ru-RU';
+          speechSynthesis.speak(utter);
+        };
+
+        const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) && !window.MSStream;
+        const utter = new SpeechSynthesisUtterance(replyText);
+        utter.lang = 'ru-RU';
+        if (!isIOS) {
+          speechSynthesis.speak(utter);
+        }
+
       } catch (e) {
         console.error(e);
         statusEl.textContent = 'Ошибка при отправке данных';
       }
     }
-  
+
+    recordBtn.addEventListener('click', () => { unlockAudio(); handleRecording(); });
+    recordBtn.addEventListener('touchstart', e => { e.preventDefault(); unlockAudio(); handleRecording(); }, { passive: false });
+    playBtn.addEventListener('touchstart', e => { e.preventDefault(); /* ловим iOS тап */ }, { passive: false });
+
     function handleRecording() {
-      unlockAudio();
-  
       if (!isRecording) {
         const options = {};
         if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          options.mimeType = 'audio/mp4'; // iOS Safari
+          options.mimeType = 'audio/mp4';
         } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
           options.mimeType = 'audio/webm;codecs=opus';
         }
-  
         try {
           recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), options);
         } catch (err) {
@@ -185,35 +191,22 @@
           statusEl.textContent = 'Ошибка записи: формат не поддерживается';
           return;
         }
-        recorder.mimeType = recorder.mimeType;
-        recorder._chunks  = [];
-        recorder.ondataavailable = e => {
-          if (e.data.size) recorder._chunks.push(e.data);
-        };
+        recorder._chunks = [];
+        recorder.ondataavailable = e => { if (e.data.size) recorder._chunks.push(e.data); };
         recorder.onstop = stopAndProcess;
-        recorder.onerror = e => {
-          console.error('Recorder error:', e);
-          statusEl.textContent = 'Ошибка при записи';
-        };
-  
+        recorder.onerror = e => { console.error('Recorder error:', e); statusEl.textContent = 'Ошибка при записи'; };
         recorder.start();
         isRecording = true;
         recordBtn.textContent = '■ Стоп';
-        statusEl.textContent = 'Запись…';
+        statusEl.textContent  = 'Запись…';
       } else {
         recorder.stop();
         isRecording = false;
         recordBtn.textContent = '🎤 Записать';
       }
     }
-  
-    recordBtn.addEventListener('click', handleRecording);
-    recordBtn.addEventListener('touchstart', e => {
-      e.preventDefault();
-      handleRecording();
-    }, { passive: false });
-  
+
     window.addEventListener('DOMContentLoaded', startStream);
-  </script>  
+  </script>
 </body>
 </html>
