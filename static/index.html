@@ -37,32 +37,36 @@
       gap: 0.5rem;
       margin-bottom: 1rem;
     }
-    button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 60px;
-      box-sizing: border-box;
-      font-size: 1.2rem;
-      padding: 0 1.5rem;
-      border: none;
+    button, select {
+      height: 50px;
+      font-size: 1rem;
+      padding: 0 1rem;
       border-radius: 8px;
+      border: none;
       background: rgba(255,255,255,0.1);
       color: #fff;
       cursor: pointer;
       transition: background .3s;
-      user-select: none;
-      touch-action: manipulation;
-      -webkit-touch-callout: none;
-      line-height: 1;
-      vertical-align: middle;
+    }
+    button:hover:not(:disabled),
+    select:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    select {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 0 1rem;
+      font-size: 1rem;
+    }
+    select option {
+      background-color: #1a1a1a;
+      color: #ffffff;
     }
     button:disabled {
-      opacity: .4;
+      opacity: .5;
       cursor: not-allowed;
-    }
-    button:hover:not(:disabled) {
-      background: rgba(255,255,255,0.2);
     }
     #status {
       margin-top: 1rem;
@@ -78,7 +82,7 @@
     <canvas id="snapshot"></canvas>
 
     <div class="buttons">
-      <button id="switchCam" disabled>⟳ Переключить</button>
+      <select id="cameraSelect" style="display:none"></select>
       <button id="recordButton" disabled>🎤 Записать</button>
       <button id="playButton" style="display:none">▶ Воспроизвести</button>
     </div>
@@ -87,41 +91,59 @@
   </div>
 
   <script>
-    const switchBtn = document.getElementById('switchCam');
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('snapshot');
+    const cameraSelect = document.getElementById('cameraSelect');
     const recordBtn = document.getElementById('recordButton');
     const playBtn = document.getElementById('playButton');
     const statusEl = document.getElementById('status');
-    const video = document.getElementById('camera');
-    const canvas = document.getElementById('snapshot');
 
     let stream;
-    let currentFacing = 'user';
-    let recorder = null;
+    let recorder;
     let isRecording = false;
     let audioCtx;
     let replyText = '';
+    let currentVideoDeviceId = null;
 
-    async function startStream() {
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: currentFacing } }, audio: true });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing }, audio: true });
-      }
-      video.srcObject = stream;
-      await new Promise(res => video.readyState >= 1 ? res() : video.onloadedmetadata = res);
-      statusEl.textContent   = 'Камера: ' + (currentFacing === 'user' ? 'фронтальная' : 'тыловая');
-      switchBtn.disabled     = false;
-      recordBtn.disabled     = false;
+    async function getDevices() {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter(d => d.kind === 'videoinput');
     }
 
-    switchBtn.addEventListener('click', async () => {
-      currentFacing = currentFacing === 'user' ? 'environment' : 'user';
-      statusEl.textContent = 'Переключаем…';
-      switchBtn.disabled   = true;
-      recordBtn.disabled   = true;
-      await startStream();
-    });
+    async function startStream(deviceId = null) {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      const constraints = { video: deviceId ? { deviceId: { exact: deviceId } } : true, audio: true };
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        await video.play();
+        currentVideoDeviceId = stream.getVideoTracks()[0].getSettings().deviceId;
+        recordBtn.disabled = false;
+        statusEl.textContent = 'Камера активна';
+      } catch (err) {
+        console.error('Ошибка доступа к камере/микрофону:', err);
+        statusEl.textContent = 'Ошибка доступа к камере/микрофону';
+      }
+    }
+
+    async function init() {
+      await startStream(); // сначала активируем первую попавшуюся камеру
+      const cameras = await getDevices();
+      if (cameras.length > 1) {
+        cameraSelect.innerHTML = '';
+        cameras.forEach(cam => {
+          const opt = document.createElement('option');
+          opt.value = cam.deviceId;
+          opt.textContent = cam.label || `Камера ${cameraSelect.length + 1}`;
+          cameraSelect.appendChild(opt);
+        });
+        cameraSelect.value = currentVideoDeviceId;
+        cameraSelect.style.display = 'inline-block';
+        cameraSelect.addEventListener('change', () => {
+          startStream(cameraSelect.value);
+        });
+      }
+    }
 
     function unlockAudio() {
       if (audioCtx) return;
@@ -149,24 +171,18 @@
         const resp = await fetch('/process', { method: 'POST', body: fd });
         const data = await resp.json();
         statusEl.textContent = 'Ответ: ' + data.reply;
-
-        // Сохранение ответа в глобальную переменную
         replyText = data.reply;
-
-        // Кнопка воспроизведения
         playBtn.style.display = 'inline-flex';
 
-        // Автовоспроизведение на не-iOS
         const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) && !window.MSStream;
         if (!isIOS) {
           const utter = new SpeechSynthesisUtterance(replyText);
           utter.lang = 'ru-RU';
           speechSynthesis.speak(utter);
         }
-
       } catch (e) {
         console.error(e);
-        statusEl.textContent = 'Ошибка при отправке данных';
+        statusEl.textContent = 'Ошибка при отправке';
       }
     }
 
@@ -176,11 +192,8 @@
       speechSynthesis.speak(utter);
     }
 
-    // Обработчики записи
     recordBtn.addEventListener('click', () => { unlockAudio(); handleRecording(); });
     recordBtn.addEventListener('touchstart', e => { e.preventDefault(); unlockAudio(); handleRecording(); }, { passive: false });
-
-    // Обработчики кнопки воспроизведения
     playBtn.addEventListener('click', playReply);
     playBtn.addEventListener('touchend', e => { e.preventDefault(); playReply(); }, { passive: false });
 
@@ -214,7 +227,7 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', startStream);
+    window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
