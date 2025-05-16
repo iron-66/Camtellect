@@ -37,6 +37,11 @@
       gap: 0.5rem;
       margin-bottom: 1rem;
     }
+    .buttons button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
     button, select {
       height: 50px;
       font-size: 1rem;
@@ -47,7 +52,6 @@
       color: #fff;
       cursor: pointer;
       transition: background .3s;
-      white-space: nowrap;
     }
     button:hover:not(:disabled),
     select:hover {
@@ -128,7 +132,7 @@
     }
 
     async function init() {
-      await startStream(); // сначала активируем первую попавшуюся камеру
+      await startStream();
       const cameras = await getDevices();
       if (cameras.length > 1) {
         cameraSelect.innerHTML = '';
@@ -173,7 +177,7 @@
         const data = await resp.json();
         statusEl.textContent = 'Ответ: ' + data.reply;
         replyText = data.reply;
-        playBtn.style.display = 'inline-flex';
+        playBtn.style.display = 'inline-block';
 
         const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) && !window.MSStream;
         if (!isIOS) {
