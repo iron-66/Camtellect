@@ -37,6 +37,11 @@ def root():
     return FileResponse("static/index.html")
 
 
+@app.get("/bind-camera")
+def bind_camera_page():
+    return FileResponse("static/bind_camera.html")
+
+
 @app.post("/process")
 async def process_input(audio: Optional[UploadFile] = File(None), image: UploadFile = File(...)):
     try:

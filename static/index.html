@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Camtellect – AIfyer</title>
+  <title>Camtellect – AIfyer for your cameras</title>
   <style>
     html, body {
       margin: 0; padding: 0; height: 100%;
@@ -82,17 +82,18 @@
 </head>
 <body>
   <div class="container">
-    <h2>Для работы необходим доступ к камере и микрофону</h2>
+    <h2>Access to camera and microphone required for operation</h2>
     <video id="camera" autoplay playsinline muted></video>
     <canvas id="snapshot"></canvas>
 
     <div class="buttons">
+      <button id="bindCameraBtn">🔗 Bind camera</button>
       <select id="cameraSelect" style="display:none"></select>
-      <button id="recordButton" disabled>🎤 Записать</button>
-      <button id="playButton" style="display:none">▶ Воспроизвести</button>
+      <button id="recordButton" disabled>🎤 Record</button>
+      <button id="playButton" style="display:none">▶ Play</button>
     </div>
 
-    <p id="status">Инициализация…</p>
+    <p id="status">Initialization…</p>
   </div>
 
   <script>
@@ -187,7 +188,7 @@
         }
       } catch (e) {
         console.error(e);
-        statusEl.textContent = 'Ошибка при отправке';
+        statusEl.textContent = 'Error sending';
       }
     }
 
@@ -201,34 +202,39 @@
     recordBtn.addEventListener('touchstart', e => { e.preventDefault(); unlockAudio(); handleRecording(); }, { passive: false });
     playBtn.addEventListener('click', playReply);
     playBtn.addEventListener('touchend', e => { e.preventDefault(); playReply(); }, { passive: false });
+    
+    document.getElementById('bindCameraBtn').addEventListener('click', () => {
+      window.location.href = '/bind-camera';
+    });
 
     function handleRecording() {
       if (!isRecording) {
         const options = {};
-        if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          options.mimeType = 'audio/mp4';
-        } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
           options.mimeType = 'audio/webm;codecs=opus';
+        }
+        else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          options.mimeType = 'audio/mp4';
         }
         try {
           recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), options);
         } catch (err) {
           console.error('MediaRecorder error:', err);
-          statusEl.textContent = 'Ошибка записи: формат не поддерживается';
+          statusEl.textContent = 'Recording Error: Format not supported';
           return;
         }
         recorder._chunks = [];
         recorder.ondataavailable = e => { if (e.data.size) recorder._chunks.push(e.data); };
         recorder.onstop = stopAndProcess;
-        recorder.onerror = e => { console.error('Recorder error:', e); statusEl.textContent = 'Ошибка при записи'; };
+        recorder.onerror = e => { console.error('Recorder error:', e); statusEl.textContent = 'Error while recording'; };
         recorder.start();
         isRecording = true;
-        recordBtn.textContent = '■ Стоп';
-        statusEl.textContent  = 'Запись…';
+        recordBtn.textContent = '■ Stop';
+        statusEl.textContent  = 'Recording…';
       } else {
         recorder.stop();
         isRecording = false;
-        recordBtn.textContent = '🎤 Записать';
+        recordBtn.textContent = '🎤 Record';
       }
     }
 
