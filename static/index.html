@@ -125,10 +125,10 @@
         await video.play();
         currentVideoDeviceId = stream.getVideoTracks()[0].getSettings().deviceId;
         recordBtn.disabled = false;
-        statusEl.textContent = 'Камера активна';
+        statusEl.textContent = 'Camera active';
       } catch (err) {
-        console.error('Ошибка доступа к камере/микрофону:', err);
-        statusEl.textContent = 'Ошибка доступа к камере/микрофону';
+        console.error('Error accessing camera/microphone:', err);
+        statusEl.textContent = 'Error accessing camera/microphone';
       }
     }
 
@@ -140,7 +140,7 @@
         cameras.forEach(cam => {
           const opt = document.createElement('option');
           opt.value = cam.deviceId;
-          opt.textContent = cam.label || `Камера ${cameraSelect.length + 1}`;
+          opt.textContent = cam.label || `Camera ${cameraSelect.length + 1}`;
           cameraSelect.appendChild(opt);
         });
         cameraSelect.value = currentVideoDeviceId;
@@ -162,7 +162,7 @@
     }
 
     async function stopAndProcess() {
-      statusEl.textContent = 'Обработка…';
+      statusEl.textContent = 'Processing…';
       const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
       canvas.width  = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -176,7 +176,7 @@
       try {
         const resp = await fetch('/process', { method: 'POST', body: fd });
         const data = await resp.json();
-        statusEl.textContent = 'Ответ: ' + data.reply;
+        statusEl.textContent = 'Response: ' + data.reply;
         replyText = data.reply;
         playBtn.style.display = 'inline-block';
 
