@@ -183,7 +183,7 @@
         const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) && !window.MSStream;
         if (!isIOS) {
           const utter = new SpeechSynthesisUtterance(replyText);
-          utter.lang = 'ru-RU';
+          utter.lang = 'en-US';
           speechSynthesis.speak(utter);
         }
       } catch (e) {
@@ -194,7 +194,7 @@
 
     function playReply() {
       const utter = new SpeechSynthesisUtterance(replyText);
-      utter.lang = 'ru-RU';
+      utter.lang = 'en-US';
       speechSynthesis.speak(utter);
     }
 
