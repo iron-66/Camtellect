@@ -60,14 +60,14 @@ async def process_input(audio: Optional[UploadFile] = File(None), image: UploadF
                     model="whisper-1",
                     file=f,
                     response_format="text",
-                    language="ru"
+                    language="en"
                 )
                 transcript_text = transcript.strip()
 
             os.remove(webm_path)
             os.remove(wav_path)
         else:
-            transcript_text = "Опиши, что изображено на этом фото"
+            transcript_text = "Describe what is in this photo"
 
         image_data = await image.read()
         image_b64 = base64.b64encode(image_data).decode("utf-8")
@@ -84,9 +84,9 @@ async def process_input(audio: Optional[UploadFile] = File(None), image: UploadF
                 {
                     "role": "system",
                     "content": (
-                        "Отвечай кратко, строго в виде обычного текста."
-                        "Не используй Markdown или символы форматирования: без **жирного**, # заголовков, подчёркиваний и прочего."
-                        "Выводи только чистый текст."
+                        "Answer briefly in plain English text."
+                        "Do not use Markdown or formatting characters: no **bold**, # headers, underscores, or similar."
+                        "Output only raw text."
                     )
                 },
                 {
