@@ -13,7 +13,7 @@ import traceback
 import subprocess
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_PLUS_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_PLUS_KEY"))
 
 app = FastAPI()
