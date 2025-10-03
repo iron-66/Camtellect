@@ -7,12 +7,13 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from typing import Optional
 import tempfile
-import os
+import os, requests
 import base64
 import traceback
 import subprocess
 
 load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_PLUS_KEY"))
 
 app = FastAPI()
@@ -105,3 +106,28 @@ async def process_input(audio: Optional[UploadFile] = File(None), image: UploadF
     except Exception as e:
         traceback.print_exc()
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/realtime-session")
+def realtime_session():
+    """
+    Создаёт Realtime-сессию и возвращает эфемерный client_secret для клиента.
+    """
+    r = requests.post(
+        "https://api.openai.com/v1/realtime/sessions",
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+            "OpenAI-Beta": "realtime=v1",
+        },
+        json={
+            # выбери нужную модель; если у тебя доступна «gpt-5 realtime» — поставь её
+            "model": "gpt-realtime",
+            # по желанию — голос, режимы; audio/video включатся по медиатрекам WebRTC
+            "voice": "verse",
+        },
+        timeout=30,
+    )
+    data = r.json()
+    # клиенту достаточно краткоживущего токена
+    client_secret = (data.get("client_secret") or {}).get("value")
+    return JSONResponse({"client_secret": client_secret})
