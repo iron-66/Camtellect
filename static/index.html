@@ -1,244 +1,183 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Camtellect – AIfyer for your cameras</title>
-  <style>
-    html, body {
-      margin: 0; padding: 0; height: 100%;
-      font-family: 'Segoe UI', sans-serif;
-      background: none; color: #fff;
-      display: flex; align-items: center; justify-content: center; text-align: center;
-    }
-    body::before {
-      content: "";
-      position: fixed; inset: 0; z-index: -1;
-      background: linear-gradient(135deg, #000 0%, #003366 35%, #5e3b85 70%, #e0b87b 100%);
-    }
-    .container {
-      max-width: 720px; width: 100%; padding: 1rem; box-sizing: border-box;
-    }
-    h2 {
-      font-size: clamp(1.5rem, 4vw, 3rem);
-      margin-bottom: 1.5rem;
-    }
-    video {
-      width: 100%; max-width: 400px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(255,255,255,0.2);
-      margin-bottom: 1rem;
-    }
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .buttons button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    button, select {
-      height: 50px;
-      font-size: 1rem;
-      padding: 0 1rem;
-      border-radius: 8px;
-      border: none;
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      cursor: pointer;
-      transition: background .3s;
-    }
-    button:hover:not(:disabled),
-    select:hover {
-      background: rgba(255,255,255,0.2);
-    }
-    select {
-      background-color: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      padding: 0 1rem;
-      font-size: 1rem;
-    }
-    select option {
-      background-color: #1a1a1a;
-      color: #ffffff;
-    }
-    button:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-    }
-    #status {
-      margin-top: 1rem;
-      font-size: 1.1rem;
-    }
-    canvas { display: none; }
-  </style>
+  <meta name="description" content="Camtellect builds an always-on, voice-first interface that extends your cognition with ambient LLM intelligence.">
+  <title>Camtellect — Augmented Intelligence in Action</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <h2>Access to camera and microphone required for operation</h2>
-    <video id="camera" autoplay playsinline muted></video>
-    <canvas id="snapshot"></canvas>
-
-    <div class="buttons">
-      <button id="bindCameraBtn">🔗 Bind camera</button>
-      <select id="cameraSelect" style="display:none"></select>
-      <button id="recordButton" disabled>🎤 Record</button>
-      <button id="playButton" style="display:none">▶ Play</button>
+  <header class="site-header">
+    <div class="container nav-container">
+      <div class="brand">
+        <div class="brand-mark">C</div>
+        <span class="brand-name">Camtellect</span>
+      </div>
+      <nav class="navigation">
+        <a href="#problem">Problem</a>
+        <a href="#concept">Concept</a>
+        <a href="#use-cases">Use Cases</a>
+        <a href="#impact">Impact</a>
+      </nav>
+      <button class="cta-button cta-button--small">Request Early Access</button>
     </div>
+  </header>
 
-    <p id="status">Initialization…</p>
-  </div>
+  <main>
+    <section class="hero">
+      <div class="container hero-content">
+        <div class="hero-text reveal">
+          <p class="tagline">Camtellect</p>
+          <h1>Augmented Intelligence in Action</h1>
+          <p class="lead">
+            We’re entering the LLM era — a time when complex thinking tasks can be outsourced, and the productivity of the human mind can multiply overnight. But today the real bottleneck isn’t the models — it’s the interface. Typing on a screen slows us down.
+          </p>
+          <p class="lead">
+            Our mission is to break that bottleneck. We’re building a natural, always-on layer between people and LLMs — voice-first, camera-aware, seamlessly blending into daily life. This is Augmented Intelligence: not replacing your mind, but extending it, so you can think and act with both your own intellect and an external cognitive engine at your side.
+          </p>
+          <div class="hero-actions">
+            <button class="cta-button">Join the Waitlist</button>
+            <button class="ghost-button">Talk to Us</button>
+          </div>
+        </div>
+        <div class="hero-visual reveal">
+          <div class="orbital">
+            <div class="orbital__ring"></div>
+            <div class="orbital__core">
+              <span>Always On</span>
+            </div>
+            <div class="orbital__pulse"></div>
+          </div>
+          <p class="visual-caption">An ambient interface that senses, understands, and elevates every decision.</p>
+        </div>
+      </div>
+    </section>
 
-  <script>
-    const video = document.getElementById('camera');
-    const canvas = document.getElementById('snapshot');
-    const cameraSelect = document.getElementById('cameraSelect');
-    const recordBtn = document.getElementById('recordButton');
-    const playBtn = document.getElementById('playButton');
-    const statusEl = document.getElementById('status');
+    <section id="problem" class="section">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="eyebrow">Problem Statement</span>
+          <h2>The interface is the bottleneck</h2>
+        </div>
+        <div class="grid grid--two">
+          <article class="text-card reveal">
+            <p>
+              Today, LLMs are powerful — but the way we interact with them is clumsy. To access this intelligence, we pull out a phone, unlock it, open an app, and type with our fingertips. This workflow feels natural only because we’ve adapted to it, not because it’s efficient.
+            </p>
+            <p>
+              From an evolutionary lens, tapping glass screens with our thumbs is a poor match for how humans actually think and communicate. In neurobiology, there’s a simple rule: behavior follows energy. The more effort a task requires, the less often we do it.
+            </p>
+          </article>
+          <article class="text-card reveal">
+            <p>
+              Right now, the energy cost of engaging with LLMs is too high — every interaction demands extra steps, breaking the natural flow of thought. This friction keeps most people from using external intelligence as often as they could.
+            </p>
+            <p>
+              We see a different path. To unlock the true potential of LLMs, the interface must disappear into daily life. Our mission is to reduce the cognitive and physical energy cost of interaction — making it native, frictionless, and LLM-first.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
 
-    let stream;
-    let recorder;
-    let isRecording = false;
-    let audioCtx;
-    let replyText = '';
-    let currentVideoDeviceId = null;
+    <section id="concept" class="section section--accent">
+      <div class="container concept-container reveal">
+        <div class="concept-copy">
+          <span class="eyebrow">The Concept of Augmented Intelligence</span>
+          <h2>Extend your mind, don’t replace it</h2>
+          <p>
+            Augmented Intelligence is not about replacing the human mind. It’s about extending it — giving every person a seamless cognitive layer that works in real time, always on, always accessible.
+          </p>
+          <p>
+            Just as eyeglasses expand vision and electricity expands power, Augmented Intelligence expands thought. It takes the friction out of accessing knowledge and transforms LLMs from tools you “open” into a natural part of how you live, act, and decide.
+          </p>
+        </div>
+        <div class="concept-highlights">
+          <div class="highlight-card reveal">
+            <h3>Ambient Awareness</h3>
+            <p>The system listens, observes, and adapts in the background, reducing cognitive load.</p>
+          </div>
+          <div class="highlight-card reveal">
+            <h3>Zero Friction</h3>
+            <p>Voice-first and camera-aware input that matches how we naturally express ideas.</p>
+          </div>
+          <div class="highlight-card reveal">
+            <h3>External Cognition</h3>
+            <p>An always-on cognitive engine that cross-references, verifies, and advises instantly.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-    async function getDevices() {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices.filter(d => d.kind === 'videoinput');
-    }
+    <section id="use-cases" class="section">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="eyebrow">Use Cases</span>
+          <h2>Augmented intelligence in the wild</h2>
+        </div>
+        <div class="use-case-grid">
+          <article class="use-case-card reveal">
+            <div class="case-icon">01</div>
+            <h3>Adaptive Choices</h3>
+            <p>Imagine walking into a supermarket. Instead of scanning labels and googling reviews, you simply ask: “Does this food align with my health goals?” and receive a tailored, real-time answer.</p>
+          </article>
+          <article class="use-case-card reveal">
+            <div class="case-icon">02</div>
+            <h3>Confident Decisions</h3>
+            <p>While considering a new car, you ask aloud: “Is this model reliable and safe for my family?” Preferences and global knowledge converge into a concise, trustworthy judgment — on the spot.</p>
+          </article>
+          <article class="use-case-card reveal">
+            <div class="case-icon">03</div>
+            <h3>Accelerated Workflows</h3>
+            <p>Dictate complex ideas while walking. The system compares with ongoing research, surfaces gaps, and suggests next steps. Intellectual labor becomes faster, precise, and dramatically scalable.</p>
+          </article>
+        </div>
+      </div>
+    </section>
 
-    async function startStream(deviceId = null) {
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      const constraints = { video: deviceId ? { deviceId: { exact: deviceId } } : true, audio: true };
-      try {
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = stream;
-        await video.play();
-        currentVideoDeviceId = stream.getVideoTracks()[0].getSettings().deviceId;
-        recordBtn.disabled = false;
-        statusEl.textContent = 'Camera active';
-      } catch (err) {
-        console.error('Error accessing camera/microphone:', err);
-        statusEl.textContent = 'Error accessing camera/microphone';
-      }
-    }
+    <section id="impact" class="section section--gradient">
+      <div class="container impact-container reveal">
+        <div class="impact-copy">
+          <span class="eyebrow">Broader Impact</span>
+          <h2>Multiply human capacity</h2>
+          <p>
+            Just as the arrival of electricity allowed societies to scale industry, cities, and daily life beyond human muscle power, Augmented Intelligence allows humanity to scale thought to new heights.
+          </p>
+          <p>
+            Access to external cognition at near-zero friction changes civilization itself — accelerating science, reshaping economies, and redefining what it means to be productive.
+          </p>
+        </div>
+        <div class="impact-callout reveal">
+          <p>
+            When intelligence is as ambient and available as electricity, the boundary between human and machine thinking dissolves, and entirely new patterns of life emerge.
+          </p>
+          <button class="cta-button cta-button--wide">Request a Demo</button>
+        </div>
+      </div>
+    </section>
+  </main>
 
-    async function init() {
-      await startStream();
-      const cameras = await getDevices();
-      if (cameras.length > 1) {
-        cameraSelect.innerHTML = '';
-        cameras.forEach(cam => {
-          const opt = document.createElement('option');
-          opt.value = cam.deviceId;
-          opt.textContent = cam.label || `Camera ${cameraSelect.length + 1}`;
-          cameraSelect.appendChild(opt);
-        });
-        cameraSelect.value = currentVideoDeviceId;
-        cameraSelect.style.display = 'inline-block';
-        cameraSelect.addEventListener('change', () => {
-          startStream(cameraSelect.value);
-        });
-      }
-    }
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="brand">
+        <div class="brand-mark">C</div>
+        <span class="brand-name">Camtellect</span>
+      </div>
+      <p class="footer-copy">Augment your mind. Elevate your decisions.</p>
+      <div class="footer-links">
+        <a href="#problem">Problem</a>
+        <a href="#concept">Concept</a>
+        <a href="#use-cases">Use Cases</a>
+        <a href="#impact">Impact</a>
+      </div>
+      <p class="footer-meta">© <span id="year"></span> Camtellect. All rights reserved.</p>
+    </div>
+  </footer>
 
-    function unlockAudio() {
-      if (audioCtx) return;
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const buf = audioCtx.createBuffer(1,1,22050);
-      const src = audioCtx.createBufferSource();
-      src.buffer = buf;
-      src.connect(audioCtx.destination);
-      src.start();
-    }
-
-    async function stopAndProcess() {
-      statusEl.textContent = 'Processing…';
-      const audioBlob = new Blob(recorder._chunks, { type: recorder.mimeType });
-      canvas.width  = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0);
-      const imageBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg'));
-      const fd = new FormData();
-      const ext = recorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
-      fd.append('audio', audioBlob, `speech.${ext}`);
-      fd.append('image', imageBlob, 'photo.jpg');
-
-      try {
-        const resp = await fetch('/process', { method: 'POST', body: fd });
-        const data = await resp.json();
-        statusEl.textContent = 'Response: ' + data.reply;
-        replyText = data.reply;
-        playBtn.style.display = 'inline-block';
-
-        const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) && !window.MSStream;
-        if (!isIOS) {
-          const utter = new SpeechSynthesisUtterance(replyText);
-          utter.lang = 'en-US';
-          speechSynthesis.speak(utter);
-        }
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = 'Error sending';
-      }
-    }
-
-    function playReply() {
-      const utter = new SpeechSynthesisUtterance(replyText);
-      utter.lang = 'en-US';
-      speechSynthesis.speak(utter);
-    }
-
-    recordBtn.addEventListener('click', () => { unlockAudio(); handleRecording(); });
-    recordBtn.addEventListener('touchstart', e => { e.preventDefault(); unlockAudio(); handleRecording(); }, { passive: false });
-    playBtn.addEventListener('click', playReply);
-    playBtn.addEventListener('touchend', e => { e.preventDefault(); playReply(); }, { passive: false });
-    
-    document.getElementById('bindCameraBtn').addEventListener('click', () => {
-      window.location.href = '/bind-camera';
-    });
-
-    function handleRecording() {
-      if (!isRecording) {
-        const options = {};
-        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-          options.mimeType = 'audio/webm;codecs=opus';
-        }
-        else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          options.mimeType = 'audio/mp4';
-        }
-        try {
-          recorder = new MediaRecorder(new MediaStream(stream.getAudioTracks()), options);
-        } catch (err) {
-          console.error('MediaRecorder error:', err);
-          statusEl.textContent = 'Recording Error: Format not supported';
-          return;
-        }
-        recorder._chunks = [];
-        recorder.ondataavailable = e => { if (e.data.size) recorder._chunks.push(e.data); };
-        recorder.onstop = stopAndProcess;
-        recorder.onerror = e => { console.error('Recorder error:', e); statusEl.textContent = 'Error while recording'; };
-        recorder.start();
-        isRecording = true;
-        recordBtn.textContent = '■ Stop';
-        statusEl.textContent  = 'Recording…';
-      } else {
-        recorder.stop();
-        isRecording = false;
-        recordBtn.textContent = '🎤 Record';
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', init);
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>

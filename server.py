@@ -38,11 +38,6 @@ def root():
     return FileResponse("static/index.html")
 
 
-@app.get("/bind-camera")
-def bind_camera_page():
-    return FileResponse("static/bind_camera.html")
-
-
 @app.post("/process")
 async def process_input(audio: Optional[UploadFile] = File(None), image: UploadFile = File(...)):
     try:
@@ -109,9 +104,6 @@ async def process_input(audio: Optional[UploadFile] = File(None), image: UploadF
 
 @app.post("/realtime-session")
 def realtime_session():
-    """
-    Создаёт Realtime-сессию и возвращает эфемерный client_secret для клиента.
-    """
     r = requests.post(
         "https://api.openai.com/v1/realtime/sessions",
         headers={
@@ -120,14 +112,11 @@ def realtime_session():
             "OpenAI-Beta": "realtime=v1",
         },
         json={
-            # выбери нужную модель; если у тебя доступна «gpt-5 realtime» — поставь её
             "model": "gpt-realtime",
-            # по желанию — голос, режимы; audio/video включатся по медиатрекам WebRTC
             "voice": "verse",
         },
         timeout=30,
     )
     data = r.json()
-    # клиенту достаточно краткоживущего токена
     client_secret = (data.get("client_secret") or {}).get("value")
     return JSONResponse({"client_secret": client_secret})
