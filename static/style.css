@@ -305,6 +305,27 @@ button {
   gap: 1.5rem;
 }
 
+.demo-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2.8rem;
+  align-items: center;
+}
+
+.demo-media {
+  border-radius: 24px;
+  overflow: hidden;
+  background: rgba(7, 12, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow);
+}
+
+.demo-video {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .highlight-card {
   padding: 1.8rem;
   border-radius: 20px;
