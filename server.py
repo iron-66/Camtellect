@@ -112,7 +112,7 @@ def realtime_session():
             "OpenAI-Beta": "realtime=v1",
         },
         json={
-            "model": "gpt-realtime",
+            "model": "gpt-realtime-mini",
             "voice": "verse",
         },
         timeout=30,
