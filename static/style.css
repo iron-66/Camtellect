@@ -348,12 +348,13 @@ button {
 }
 
 .team-photo {
-  width: calc(100% + 4rem);
-  max-width: none;
-  margin: 0 -2rem 0;
+  width: calc(100% + 2rem);
+  margin-left: -1rem;
+  margin-right: -1rem;
+  margin-top: auto;
   display: block;
   object-fit: contain;
-  border-radius: 0;
+  object-position: bottom center;
 }
 
 .team-info {
