@@ -333,23 +333,32 @@ button {
 }
 
 .team-card {
-  padding: 2rem;
+  padding: 2rem 2rem 0;
   border-radius: 24px;
   background: linear-gradient(150deg, rgba(123, 92, 255, 0.12), rgba(0, 234, 255, 0.05));
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.5rem;
+  height: 100%;
+  overflow: hidden;
 }
 
 .team-photo {
-  width: 100%;
-  max-width: 260px;
-  margin: 0 auto 1.5rem;
+  width: calc(100% + 4rem);
+  max-width: none;
+  margin: 0 -2rem 0;
   display: block;
   object-fit: contain;
-  border-radius: 20px;
-  background: rgba(4, 5, 13, 0.7);
-  padding: 0.5rem;
+  border-radius: 0;
+}
+
+.team-info {
+  width: 100%;
+  padding: 0 0 0.5rem;
 }
 
 .team-info h3 {
