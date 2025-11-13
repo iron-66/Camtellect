@@ -26,7 +26,7 @@
         <a href="#team">Our Team</a>
         <a href="#impact">Impact</a>
       </nav>
-      <button class="cta-button cta-button--small">Request Early Access</button>
+      <button class="cta-button cta-button--small" data-modal-trigger>Get Early Access</button>
     </div>
   </header>
 
@@ -43,18 +43,22 @@
             Our mission is to break that bottleneck. We’re building a natural, always-on layer between people and LLMs - voice-first, camera-aware, seamlessly blending into daily life. This is Augmented Intelligence: not replacing your mind, but extending it, so you can think and act with both your own intellect and an external cognitive engine at your side.
           </p>
           <div class="hero-actions">
-            <button class="cta-button">Request early access</button>
-            <button class="ghost-button">Talk to Us</button>
+            <button class="cta-button" data-modal-trigger>Get early access</button>
+            <a class="ghost-button" href="https://www.linkedin.com/in/alremez/?originalSubdomain=uk" target="_blank" rel="noreferrer">Contact us</a>
           </div>
         </div>
         <div class="hero-visual reveal">
-          <div class="orbital">
-            <div class="orbital__ring"></div>
-            <div class="orbital__core">
-              <span>Always On</span>
+          <div class="orbital-wrap">
+            <div class="orbital">
+              <div class="orbital__ring"></div>
+              <div class="orbital__mask">
+                <img src="/static/phone.png" alt="Phone preview" class="orbital__phone orbital__phone--inside">
+              </div>
             </div>
-            <div class="orbital__pulse"></div>
+            <img src="/static/phone.png" alt="" aria-hidden="true"
+                class="orbital__phone orbital__phone--top">
           </div>
+
           <p class="visual-caption">An ambient interface that senses, understands, and elevates every decision.</p>
         </div>
       </div>
@@ -213,7 +217,7 @@
           <p>
             When intelligence is as ambient and available as electricity, the boundary between human and machine thinking dissolves, and entirely new patterns of life emerge.
           </p>
-          <button class="cta-button cta-button--wide">Request a Demo</button>
+          <button class="cta-button cta-button--wide" data-modal-trigger>Get a trial version of Camtellect</button>
         </div>
       </div>
     </section>
@@ -227,14 +231,37 @@
       </div>
       <p class="footer-copy">Augment your mind. Elevate your decisions.</p>
       <div class="footer-links">
+        <a href="#demo">Demo</a>
         <a href="#problem">Problem</a>
         <a href="#concept">Concept</a>
         <a href="#use-cases">Use Cases</a>
+        <a href="#team">Our Team</a>
         <a href="#impact">Impact</a>
       </div>
       <p class="footer-meta">© <span id="year"></span> Camtellect. All rights reserved.</p>
     </div>
   </footer>
+
+  <div class="modal-backdrop" id="downloadModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-window">
+      <button class="modal-close" aria-label="Close dialog">×</button>
+      <h3 class="modal-title">Get Camtellect</h3>
+      <p class="modal-description">
+        Install the always-on Camtellect client on your Android device to get a taste of ambient intelligence wherever you go.
+      </p>
+      <p class="modal-description">
+        The APK is signed and ready for sideloading; permissions are limited to camera, microphone, and storage.
+      </p>
+      <ul class="modal-requirements">
+        <li>Android 13 or newer</li>
+        <li>At least 5 MB of free storage</li>
+        <li>Camera and microphone access for ambient sensing</li>
+      </ul>
+      <a class="cta-button modal-download" href="/static/Camtellect.apk" download>
+        Download APK
+      </a>
+    </div>
+  </div>
 
   <script src="/static/script.js"></script>
 </body>
